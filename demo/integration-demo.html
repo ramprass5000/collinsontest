@@ -1,0 +1,1819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Priority Pass + Taxi App Integration Demo</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .integration-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .integration-card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+
+        .integration-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+        }
+
+        .integration-card.disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+            filter: blur(2px);
+            transform: none;
+            pointer-events: none;
+        }
+
+        .integration-card.disabled:hover {
+            transform: none;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+
+        .integration-card.selected {
+            border: 3px solid #667eea;
+            background: #f8fafc;
+        }
+
+        .integration-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: white;
+        }
+
+        .integration-card h3 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #1a202c;
+        }
+
+        .integration-card p {
+            color: #64748b;
+            line-height: 1.6;
+        }
+
+        .demo-section {
+            display: none;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+
+        .demo-section.show {
+            display: block;
+            animation: slideUp 0.4s ease-out;
+        }
+
+        .demo-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #f1f5f9;
+        }
+
+        .demo-header h2 {
+            font-size: 2rem;
+            font-weight: 600;
+            color: #1a202c;
+            margin-bottom: 10px;
+        }
+
+        .demo-header p {
+            color: #64748b;
+            font-size: 1.1rem;
+        }
+
+        .steps-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            align-items: start;
+        }
+
+        .steps-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .step-box {
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 15px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+
+        .step-box:hover {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+
+        .step-box.active {
+            border-color: #8b5cf6;
+            border-width: 3px;
+            background: linear-gradient(135deg, #f3e8ff, #e9d5ff);
+            box-shadow: 0 8px 25px rgba(139, 92, 246, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .step-box.active .step-number {
+            background: #8b5cf6;
+            transform: scale(1.1);
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
+        }
+        
+        .step-box.active .step-title {
+            color: #7c3aed;
+        }
+        
+        .step-box.active .step-description {
+            color: #6b21a8;
+        }
+
+        .step-number {
+            position: absolute;
+            top: -10px;
+            left: 20px;
+            background: #667eea;
+            color: white;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 600;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .step-title {
+            font-weight: 600;
+            color: #1a202c;
+            margin-bottom: 8px;
+            font-size: 1rem;
+        }
+
+        .step-description {
+            color: #64748b;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .mobile-mockup {
+            width: 320px;
+            height: 680px;
+            margin: 0 auto;
+            position: relative;
+            background: transparent;
+            transition: transform 0.3s ease;
+        }
+
+        .mobile-mockup.lowered {
+            transform: translateY(150px);
+        }
+
+        .mobile-mockup.lowered-more {
+            transform: translateY(250px);
+        }
+
+        .mobile-frame {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .mobile-screen {
+            background: linear-gradient(135deg, #e0e7ff, #f3e8ff, #fef3c7, #fecaca);
+            background-size: 400% 400%;
+            border-radius: 25px;
+            width: 270px;
+            height: 630px;
+            position: relative;
+            top: 25px;
+            left: 25px;
+            overflow: hidden;
+            z-index: 1;
+            animation: gradientShift 8s ease infinite;
+        }
+        
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .mobile-content {
+            padding: 30px 20px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background: transparent;
+            box-sizing: border-box;
+        }
+
+        .mobile-content h3 {
+            color: #1e293b;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            font-weight: 700;
+        }
+
+        .mobile-content p {
+            color: #475569;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            font-weight: 500;
+        }
+
+        .mobile-content img {
+            margin-bottom: 15px;
+            opacity: 0.8;
+            max-width: 100%;
+            height: auto;
+        }
+        
+        .mobile-content img[src*="data:image/svg+xml"] {
+            width: 100px;
+            height: 100px;
+        }
+        
+        .mobile-content h3 {
+            color: #1e293b;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            font-weight: 700;
+            max-width: 100%;
+            word-wrap: break-word;
+        }
+
+        .mobile-content p {
+            color: #475569;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            font-weight: 500;
+            max-width: 100%;
+            word-wrap: break-word;
+        }
+        
+        .book-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 15px;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .book-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+        
+        .book-button:active {
+            transform: translateY(0);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .pulsating-circle-uber {
+            position: absolute;
+            top: 95%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 24px;
+            height: 24px;
+            background: #00ff41;
+            border-radius: 50%;
+            animation: pressPulse 1.5s infinite;
+            z-index: 11;
+            box-shadow: 0 0 10px #00ff41, 0 0 20px #00ff41;
+            cursor: pointer;
+        }
+
+        .priority-pass-book-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            margin-top: 20px;
+            width: auto;
+            min-width: 200px;
+        }
+
+        .priority-pass-book-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 35px rgba(102, 126, 234, 0.4);
+        }
+
+        .priority-pass-book-button:active {
+            transform: translateY(0);
+        }
+        
+        /* Push Notification Styles */
+        .push-notification {
+            background: #000000;
+            color: white;
+            border-radius: 0 0 10px 10px;
+            padding: 12px 20px;
+            margin: 0;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            width: 100%;
+            height: 80px;
+            min-height: 45px;
+            overflow: hidden;
+            z-index: 10;
+            text-align: left;
+        }
+        
+        .pulsating-circle {
+            position: absolute;
+            top: 50%;
+            right: 20px;
+            transform: translateY(-50%);
+            width: 16px;
+            height: 16px;
+            background: #00ff41;
+            border-radius: 50%;
+            animation: pressPulse 1.5s infinite;
+            z-index: 11;
+            box-shadow: 0 0 10px #00ff41, 0 0 20px #00ff41;
+        }
+        
+        @keyframes pressPulse {
+            0% {
+                transform: translateY(-50%) scale(1);
+                opacity: 1;
+                box-shadow: 0 0 10px #00ff41, 0 0 20px #00ff41;
+            }
+            50% {
+                transform: translateY(-50%) scale(1.3);
+                opacity: 0.8;
+                box-shadow: 0 0 15px #00ff41, 0 0 30px #00ff41;
+            }
+            100% {
+                transform: translateY(-50%) scale(1);
+                opacity: 1;
+                box-shadow: 0 0 10px #00ff41, 0 0 20px #00ff41;
+            }
+        }
+        
+
+        
+        .push-notification:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.6);
+        }
+        
+        .push-notification:active {
+            transform: translateY(-1px) scale(0.98);
+        }
+        
+        .push-notification.clicked {
+            animation: notificationClick 0.6s ease-out;
+        }
+        
+        @keyframes notificationClick {
+            0% { transform: scale(1); }
+            50% { transform: scale(0.95); }
+            100% { transform: scale(1); }
+        }
+        
+        .notification-header {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            margin-bottom: 5px;
+        }
+        
+        .notification-icon {
+            width: 20px;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            font-size: 12px;
+        }
+        
+        .notification-title {
+            font-weight: 600;
+            font-size: 0.8rem;
+            margin: 0;
+        }
+        
+        .notification-message {
+            font-size: 0.7rem;
+            opacity: 0.9;
+            line-height: 1.2;
+            margin: 0;
+        }
+        
+        .notification-time {
+            font-size: 0.6rem;
+            opacity: 0.7;
+            margin-top: 0;
+            text-align: right;
+            position: absolute;
+            top: 12px;
+            right: 20px;
+        }
+
+        .back-button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+        }
+
+        .back-button:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .integration-options {
+                grid-template-columns: 1fr;
+            }
+            
+            .steps-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .mobile-mockup {
+                width: 280px;
+                height: 600px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Priority Pass + Taxi App Integration</h1>
+            <p>Seamless airport journey experience for travelers</p>
+        </div>
+
+        <div class="integration-options">
+            <div class="integration-card" onclick="selectIntegration('taxi', event)">
+                <div class="integration-icon">🚕</div>
+                <h3>Taxi App with Priority Pass</h3>
+                <p>Book a taxi and discover Priority Pass lounge benefits during your journey</p>
+            </div>
+            
+            <div class="integration-card disabled" onclick="selectIntegration('priority', event)">
+                <div class="integration-icon">✈️</div>
+                <h3>Priority Pass App with Taxi</h3>
+                <p>Book lounge access and arrange transportation to the airport</p>
+            </div>
+        </div>
+
+        <!-- Taxi App with Priority Pass Demo -->
+        <div id="taxi-demo" class="demo-section">
+            <div class="demo-header">
+                <h2>Taxi App with Priority Pass Integration</h2>
+                <p>Step-by-step flow showing how users discover Priority Pass benefits while booking a taxi</p>
+            </div>
+            
+            <div class="steps-container">
+                <div class="steps-list">
+                    <div class="step-box" onclick="showStep(1, 'taxi', event)">
+                        <div class="step-number">1</div>
+                        <div class="step-title">User books taxi to Heathrow T5</div>
+                        <div class="step-description">User selects destination as Heathrow Terminal 5 in the taxi app</div>
+                    </div>
+                    
+                    <div class="step-box" onclick="showStep(2, 'taxi', event)">
+                        <div class="step-number">2</div>
+                        <div class="step-title">Upcoming ride booked for 14 Aug 2025 11am start time from Orpington Station</div>
+                        <div class="step-description">Taxi booking is confirmed and driver is assigned</div>
+                    </div>
+                    
+
+                    
+                    <div class="step-box" onclick="showStep(3, 'taxi', event)">
+                        <div class="step-number">3</div>
+                        <div class="step-title">User views T5 lounges</div>
+                        <div class="step-description">User clicks notification to see available lounges in T5</div>
+                    </div>
+                    
+                    <div class="step-box" onclick="showStep(4, 'taxi', event)">
+                        <div class="step-number">4</div>
+                        <div class="step-title">Priority Pass login & consent</div>
+                        <div class="step-description">User logs into Priority Pass and provides consent for data sharing</div>
+                    </div>
+                    
+                    <div class="step-box" onclick="showStep(5, 'taxi', event)">
+                        <div class="step-number">5</div>
+                        <div class="step-title">Flight details input</div>
+                        <div class="step-description">User enters flight number, date, time, and confirms airport</div>
+                    </div>
+                    
+                    <div class="step-box" onclick="showStep(6, 'taxi', event)">
+                        <div class="step-number">6</div>
+                        <div class="step-title">Available Lounges</div>
+                        <div class="step-description">View available lounges with date and time availability</div>
+                    </div>
+                    
+                    <div class="step-box" onclick="showStep(7, 'taxi', event)">
+                        <div class="step-number">7</div>
+                        <div class="step-title">Lounge Reservation</div>
+                        <div class="step-description">Enter entry/exit times and confirm reservation</div>
+                    </div>
+                    
+                    <div class="step-box" onclick="showStep(8, 'taxi', event)">
+                        <div class="step-number">8</div>
+                        <div class="step-title">Update Taxi Booking</div>
+                        <div class="step-description">Adjust taxi timing based on lounge reservation</div>
+                    </div>
+                    
+                    <div class="step-box" onclick="showStep(9, 'taxi', event)">
+                        <div class="step-number">9</div>
+                        <div class="step-title">QR Code Ready</div>
+                        <div class="step-description">Lounge access confirmed with QR code for check-in</div>
+                    </div>
+                    
+                </div>
+                
+                <div class="mobile-mockup">
+                    <svg class="mobile-frame" viewBox="0 0 320 680" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Phone body - iPhone 15 Pro style with modern proportions -->
+                        <rect x="15" y="15" width="290" height="650" rx="40" ry="40" fill="#1a1a1a" stroke="#2a2a2a" stroke-width="2"/>
+                        
+                        <!-- Screen area with realistic bezels -->
+                        <rect x="25" y="25" width="270" height="630" rx="32" ry="32" fill="transparent" stroke="#374151" stroke-width="1"/>
+                        
+                        <!-- Dynamic Island (iPhone 15 Pro style) - more prominent -->
+                        <ellipse cx="160" cy="45" rx="28" ry="14" fill="#000000"/>
+                        <ellipse cx="160" cy="45" rx="26" ry="12" fill="#1a1a1a"/>
+                        
+                        <!-- Home indicator - more modern -->
+                        <rect x="130" y="650" width="60" height="4" rx="2" ry="2" fill="#6b7280"/>
+                        
+                        <!-- Volume buttons - more realistic positioning -->
+                        <rect x="8" y="160" width="3" height="30" rx="1.5" ry="1.5" fill="#4b5563"/>
+                        <rect x="8" y="200" width="3" height="30" rx="1.5" ry="1.5" fill="#4b5563"/>
+                        
+                        <!-- Power button - more realistic -->
+                        <rect x="309" y="180" width="3" height="35" rx="1.5" ry="1.5" fill="#4b5563"/>
+                        
+                        <!-- Action button (iPhone 15 Pro) -->
+                        <rect x="309" y="240" width="3" height="25" rx="1.5" ry="1.5" fill="#4b5563"/>
+                        
+                        <!-- Subtle camera bump shadow -->
+                        <ellipse cx="160" cy="45" rx="32" ry="16" fill="rgba(0,0,0,0.1)"/>
+                    </svg>
+                    <div class="mobile-screen">
+                        <div id="taxi-mobile-content" class="mobile-content">
+                            <h3>Taxi App</h3>
+                            <p>Select your integration flow to see the mobile app interface</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+
+            
+            <button class="back-button" onclick="goBack()">← Back to Integration Options</button>
+        </div>
+
+        <!-- Priority Pass App with Taxi Demo -->
+        <div id="priority-demo" class="demo-section">
+            <div class="demo-header">
+                <h2>Priority Pass App with Taxi Integration</h2>
+                <p>Step-by-step flow showing how users book lounge access and arrange transportation</p>
+            </div>
+            
+            <div class="steps-container">
+                <div class="steps-list">
+                    <div class="step-box" onclick="showStep(1, 'priority', event)">
+                        <div class="step-number">1</div>
+                        <div class="step-title">User opens Priority Pass app</div>
+                        <div class="step-description">User navigates to Priority Pass app to book lounge access</div>
+                    </div>
+                    
+                    <div class="step-box" onclick="showStep(2, 'priority', event)">
+                        <div class="step-number">2</div>
+                        <div class="step-title">Select airport and terminal</div>
+                        <div class="step-description">User chooses Heathrow T5 and views available lounges</div>
+                    </div>
+                    
+                    <div class="step-box" onclick="showStep(3, 'priority', event)">
+                        <div class="step-number">3</div>
+                        <div class="step-title">Book lounge access</div>
+                        <div class="step-description">User selects lounge and confirms booking details</div>
+                    </div>
+                    
+                    <div class="step-box" onclick="showStep(4, 'priority', event)">
+                        <div class="step-number">4</div>
+                        <div class="step-title">Transportation prompt</div>
+                        <div class="step-description">App suggests booking taxi to airport with estimated arrival time</div>
+                    </div>
+                    
+                    <div class="step-box" onclick="showStep(5, 'priority', event)">
+                        <div class="step-number">5</div>
+                        <div class="step-title">Taxi booking integration</div>
+                        <div class="step-description">User can book taxi directly from Priority Pass app</div>
+                    </div>
+                    
+                    <div class="step-box" onclick="showStep(6, 'priority', event)">
+                        <div class="step-number">6</div>
+                        <div class="step-title">Journey coordination</div>
+                        <div class="step-description">App coordinates lounge access time with taxi arrival</div>
+                    </div>
+                    
+                    <div class="step-box" onclick="showStep(7, 'priority', event)">
+                        <div class="step-number">7</div>
+                        <div class="step-title">Complete journey plan</div>
+                        <div class="step-description">User has both lounge access and transportation arranged</div>
+                    </div>
+                </div>
+                
+                <div class="mobile-mockup">
+                    <svg class="mobile-frame" viewBox="0 0 320 680" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Phone body - iPhone 15 Pro style with modern proportions -->
+                        <rect x="15" y="15" width="290" height="650" rx="40" ry="40" fill="#1a1a1a" stroke="#2a2a2a" stroke-width="2"/>
+                        
+                        <!-- Screen area with realistic bezels -->
+                        <rect x="25" y="25" width="270" height="630" rx="32" ry="32" fill="transparent" stroke="#374151" stroke-width="1"/>
+                        
+                        <!-- Dynamic Island (iPhone 15 Pro style) - more prominent -->
+                        <ellipse cx="160" cy="45" rx="28" ry="14" fill="#000000"/>
+                        <ellipse cx="160" cy="45" rx="26" ry="12" fill="#1a1a1a"/>
+                        
+                        <!-- Home indicator - more modern -->
+                        <rect x="130" y="650" width="60" height="4" rx="2" ry="2" fill="#6b7280"/>
+                        
+                        <!-- Volume buttons - more realistic positioning -->
+                        <rect x="8" y="160" width="3" height="30" rx="1.5" ry="1.5" fill="#4b5563"/>
+                        <rect x="8" y="200" width="3" height="30" rx="1.5" ry="1.5" fill="#4b5563"/>
+                        
+                        <!-- Power button - more realistic -->
+                        <rect x="309" y="180" width="3" height="35" rx="1.5" ry="1.5" fill="#4b5563"/>
+                        
+                        <!-- Action button (iPhone 15 Pro) -->
+                        <rect x="309" y="240" width="3" height="25" rx="1.5" ry="1.5" fill="#4b5563"/>
+                        
+                        <!-- Subtle camera bump shadow -->
+                        <ellipse cx="160" cy="45" rx="32" ry="16" fill="rgba(0,0,0,0.1)"/>
+                    </svg>
+                    <div class="mobile-screen">
+                        <div id="priority-mobile-content" class="mobile-content">
+                            <h3>Priority Pass App</h3>
+                            <p>Select your integration flow to see the mobile app interface</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <button class="back-button" onclick="goBack()">← Back to Integration Options</button>
+        </div>
+
+
+    </div>
+
+    <script>
+        function selectIntegration(type, event) {
+            // Check if the clicked card is disabled
+            if (event && event.currentTarget && event.currentTarget.classList.contains('disabled')) {
+                return; // Don't proceed if card is disabled
+            }
+            
+            // Hide all demo sections
+            document.getElementById('taxi-demo').classList.remove('show');
+            document.getElementById('priority-demo').classList.remove('show');
+            
+            // Show selected demo
+            if (type === 'taxi') {
+                document.getElementById('taxi-demo').classList.add('show');
+            } else if (type === 'priority') {
+                document.getElementById('priority-demo').classList.add('show');
+            }
+            
+            // Update card selection
+            document.querySelectorAll('.integration-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            if (event && event.currentTarget) {
+                event.currentTarget.classList.add('selected');
+            }
+        }
+
+        function showStep(stepNumber, type, event) {
+            // Remove active class from all steps
+            const steps = document.querySelectorAll(`#${type}-demo .step-box`);
+            steps.forEach(step => step.classList.remove('active'));
+            
+            // Add active class to selected step
+            if (event && event.currentTarget) {
+                event.currentTarget.classList.add('active');
+            }
+            
+            // Move mobile mockup down for steps 5 and higher
+            const mobileMockup = document.querySelector(`#${type}-demo .mobile-mockup`);
+            if (mobileMockup) {
+                if (stepNumber >= 5) {
+                    mobileMockup.classList.add('lowered');
+                    mobileMockup.classList.add('lowered-more');
+                    // For step 5 specifically, scroll the page down more
+                    if (stepNumber === 5) {
+                        // Scroll the page down more
+                        setTimeout(() => {
+                            window.scrollTo({
+                                top: window.innerHeight * 0.7,
+                                behavior: 'smooth'
+                            });
+                        }, 200);
+                    }
+                } else {
+                    mobileMockup.classList.remove('lowered');
+                    mobileMockup.classList.remove('lowered-more');
+                }
+            }
+            
+            // Auto-scroll to keep the active step visible
+            if (event && event.currentTarget) {
+                setTimeout(() => {
+                    event.currentTarget.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'center',
+                        inline: 'nearest'
+                    });
+                }, 100);
+            }
+            
+            // Update mobile content based on step and type
+            updateMobileContent(stepNumber, type);
+        }
+
+        function updateMobileContent(stepNumber, type) {
+            const content = document.getElementById(`${type}-mobile-content`);
+            console.log('updateMobileContent called:', stepNumber, type);
+            console.log('Content element:', content);
+            
+            const stepContent = {
+                taxi: {
+                    1: { title: "Taxi Booking", desc: "Heathrow T5 destination selected", image: "taxi-booking.jpeg", hasBookButton: true },
+                    2: { title: "Booking Confirmed", desc: "Upcoming ride booked for 14 Aug 2025 11am start time from Orpington Station", customMessage: true },
+                    3: { title: "T5 Lounges", desc: "Available lounges in Terminal 5", showLoungeOptions: true, loungeImages: ["plaza-premium-t5.webp", "club-aspire-t5.webp"] },
+                    4: { title: "Priority Pass Login", desc: "Authenticate with Priority Pass", showAuthFlow: true },
+                    5: { title: "Flight Details", desc: "Enter flight information", showFlightForm: true },
+                    6: { title: "Available Lounges", desc: "Select from available lounges", showLoungeSelection: true },
+                    7: { title: "Lounge Reservation", desc: "Enter entry/exit times and reserve", showLoungeReservation: true },
+                    8: { title: "Update Taxi Booking", desc: "Adjust taxi timing based on lounge", showTaxiUpdate: true },
+                    9: { title: "QR Code Ready", desc: "Show at lounge counter", showQRCode: true }
+                },
+                priority: {
+                    1: { title: "Priority Pass App", desc: "Welcome to Priority Pass", icon: "✈️" },
+                    2: { title: "Airport Selection", desc: "Heathrow T5 selected", icon: "🏛️" },
+                    3: { title: "Lounge Booking", desc: "Select and book lounge", icon: "🛋️" },
+                    4: { title: "Transportation", desc: "Need a ride to airport?", icon: "🚕" },
+                    5: { title: "Taxi Integration", desc: "Book taxi from app", icon: "🔗" },
+                    6: { title: "Journey Planning", desc: "Coordinating times", icon: "⏰" },
+                    7: { title: "All Set!", desc: "Lounge + Taxi arranged", icon: "🎉" }
+                }
+            };
+            
+            const step = stepContent[type][stepNumber];
+            console.log('Step data:', step);
+            
+            if (step.showLoungeOptions) {
+                content.innerHTML = `
+                    <div style="display: flex; flex-direction: column; gap: 20px; margin-bottom: 25px;">
+                        <div style="position: relative; overflow: hidden; border-radius: 8px;">
+                            <img src="plaza-premium-t5.webp" alt="Plaza Premium Lounge" style="width: 100%; height: auto; max-height: 200px; object-fit: cover; border-radius: 8px;" onerror="console.log('Image failed to load:', this.src)" onload="console.log('Image loaded successfully:', this.src)">
+                            <div style="position: absolute; bottom: 10px; left: 10px; background: rgba(0,0,0,0.7); color: white; padding: 5px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 600;">Plaza Premium</div>
+                        </div>
+                        <div style="position: relative; overflow: hidden; border-radius: 8px;">
+                            <img src="club-aspire-t5.webp" alt="Club Aspire Lounge" style="width: 100%; height: auto; max-height: 200px; object-fit: cover; border-radius: 8px;" onload="console.log('Image loaded successfully:', this.src)" onerror="console.log('Image failed to load:', this.src)">
+                            <div style="position: absolute; bottom: 10px; left: 10px; background: rgba(0,0,0,0.7); color: white; padding: 5px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 600;">Club Aspire</div>
+                        </div>
+                    </div>
+                    <h3 style="margin-top: 20px;">${step.title}</h3>
+                    <p>${step.desc}</p>
+                    <p style="font-size: 0.9rem; opacity: 0.8; margin-top: 10px;">Choose between Plaza Premium Lounge or Club Aspire Lounge</p>
+                    <div style="position: relative; display: inline-block;">
+                        <button class="priority-pass-book-button" onclick="bookWithPriorityPass(event)">Book with Priority Pass</button>
+                        <div class="pulsating-circle-uber" onclick="bookWithPriorityPass(event)" style="top: 25px; left: 50%; transform: translate(-50%, -50%);"></div>
+                    </div>
+                    <p style="font-size: 0.7rem; opacity: 0.6; margin-top: 8px; text-align: center;">Eligible Priority Pass members only</p>
+                `;
+                console.log('Loading lounge options');
+            } else if (step.customMessage) {
+                content.innerHTML = `
+                    <h3>${step.title}</h3>
+                    <p>${step.desc}</p>
+                    <div class="push-notification" onclick="handleNotificationClick(this)">
+                        <div class="notification-header">
+                            <div class="notification-icon">✈️</div>
+                            <div class="notification-title">Uber x Priority Pass</div>
+                        </div>
+                        <div class="notification-message">
+                            Free & discounted lounge access available to Priority Pass members - T&C's apply. Tap to view.
+                        </div>
+                        <div class="notification-time">Just now</div>
+                        <div class="pulsating-circle"></div>
+                    </div>
+                `;
+                console.log('Loading custom message with notification');
+            } else if (step.image) {
+                if (step.hasBookButton && stepNumber === 1) {
+                    content.innerHTML = `
+                        <div style="position: relative; width: 100%; overflow: hidden;">
+                            <img src="${step.image}" alt="${step.title}" style="width: 100%; height: auto; max-height: 500px; object-fit: cover; border-radius: 30px; margin-bottom: 15px;" onerror="console.log('Image failed to load:', this.src)" onload="console.log('Image loaded successfully:', this.src)">
+                            <div class="pulsating-circle-uber" onclick="simulateUberSelection()"></div>
+                        </div>
+                        <h3 style="margin-top: 20px;">${step.title}</h3>
+                        <p>${step.desc}</p>
+                    `;
+                } else if (step.hasBookButton) {
+                    content.innerHTML = `
+                        <div style="position: relative; width: 100%; overflow: hidden;">
+                            <img src="${step.image}" alt="${step.title}" style="width: 100%; height: auto; max-height: 500px; object-fit: cover; border-radius: 30px; margin-bottom: 15px;" onerror="console.log('Image failed to load:', this.src)" onload="console.log('Image loaded successfully:', this.src)">
+                        </div>
+                        <h3 style="margin-top: 20px;">${step.title}</h3>
+                        <p>${step.desc}</p>
+                    `;
+                } else {
+                    content.innerHTML = `
+                        <img src="${step.image}" alt="${step.title}" style="width: 100%; height: 200px; object-fit: cover; border-radius: 10px; margin-bottom: 15px;" onerror="console.log('Image failed to load:', this.src)" onload="console.log('Image loaded successfully:', this.src)">
+                        <h3>${step.title}</h3>
+                        <p>${step.desc}</p>
+                    `;
+                }
+                console.log('Loading image:', step.image);
+            } else if (step.showAuthFlow) {
+                content.innerHTML = `
+                    <div style="background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%); padding: 20px; border-radius: 20px; min-height: 100%;">
+                        <div style="text-align: center; margin-bottom: 20px;">
+                            <img src="Priority_Pass_logo.png" alt="Priority Pass" style="width: 80px; height: auto; margin-bottom: 15px;">
+                            <h3 id="authTitle" style="color: #1e293b; margin-bottom: 10px;">Priority Pass Login</h3>
+                            <p id="authSubtitle" style="color: #475569; font-size: 0.9rem; margin-bottom: 20px;">Sign in to access exclusive lounge benefits</p>
+                        </div>
+                        
+                        <div id="loginSection" style="background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                            <div style="margin-bottom: 20px;">
+                                <input type="email" placeholder="Email address" style="width: 100%; padding: 12px; border: 2px solid #cbd5e1; border-radius: 8px; margin-bottom: 12px; font-size: 0.9rem; box-sizing: border-box;">
+                                <input type="password" placeholder="Password" style="width: 100%; padding: 12px; border: 2px solid #cbd5e1; border-radius: 8px; margin-bottom: 12px; font-size: 0.9rem; box-sizing: border-box;">
+                            </div>
+                            
+                            <button class="priority-pass-book-button" onclick="handlePriorityPassLogin(event)" style="width: 100%; background: linear-gradient(135deg, #475569 0%, #334155 100%); border: none;">Sign In</button>
+                        </div>
+                        
+                        <div id="consentSection" style="display: none; visibility: hidden; opacity: 0; height: 0; overflow: hidden;">
+                            <div style="background: white; border-radius: 16px; padding: 24px; margin: 0 2px 20px; box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08); width: 100%;">
+                                <div style="text-align: left; margin-bottom: 16px;">
+                                    <div style="display: flex; align-items: center; margin-bottom: 14px; line-height: 1.4;">
+                                        <div style="width: 8px; height: 8px; background: #64748b; border-radius: 50%; margin-right: 12px;"></div>
+                                        <span style="font-size: 0.85rem; color: #334155;">Read user profile settings</span>
+                                    </div>
+                                    <div style="display: flex; align-items: center; margin-bottom: 14px; line-height: 1.4;">
+                                        <div style="width: 8px; height: 8px; background: #64748b; border-radius: 50%; margin-right: 12px;"></div>
+                                        <span style="font-size: 0.85rem; color: #334155;">Read pricing tier information</span>
+                                    </div>
+                                    <div style="display: flex; align-items: center; margin-bottom: 6px; line-height: 1.4;">
+                                        <div style="width: 8px; height: 8px; background: #64748b; border-radius: 50%; margin-right: 12px;"></div>
+                                        <span style="font-size: 0.85rem; color: #334155;">Read booking preferences</span>
+                                    </div>
+                                </div>
+                                
+                                <div style="display: flex; gap: 12px; width: 100%; margin-top: 8px;">
+                                    <button onclick="handleConsentDeny(event)" style="flex: 1; min-width: 0; width: 100%; padding: 12px; border: 2px solid #64748b; background: white; color: #334155; border-radius: 10px; font-weight: 600; cursor: pointer; font-size: 0.95rem; height: 48px;">Deny</button>
+                                    <button onclick="handleConsentAllow(event)" style="flex: 1; min-width: 0; width: 100%; padding: 12px; background: linear-gradient(135deg, #475569 0%, #334155 100%); color: white; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 0.95rem; height: 48px;">Allow</button>
+                                </div>
+                            </div>
+                            
+                            <p style="font-size: 0.75rem; color: #64748b; margin-top: 12px; text-align: center;">You can revoke access at any time in your Priority Pass settings</p>
+                        </div>
+                        
+                        <p style="font-size: 0.75rem; color: #64748b; margin-top: 12px; text-align: center;">By continuing, you agree to our Terms of Service and Privacy Policy</p>
+                    </div>
+                `;
+                console.log('Loading authentication flow');
+            } else if (step.notification) {
+                content.innerHTML = `
+                    <h3>${step.title}</h3>
+                    <p>${step.desc}</p>
+                    <div class="push-notification" onclick="handleNotificationClick(this)">
+                        <div class="notification-header">
+                            <div class="notification-icon">✈️</div>
+                            <div class="notification-title">Uber x Priority Pass</div>
+                        </div>
+                        <div class="notification-message">
+                            Free & discounted lounge access available to Priority Pass members - T&C's apply. Tap to view.
+                        </div>
+                        <div class="notification-time">Just now</div>
+                        <div class="pulsating-circle"></div>
+                    </div>
+                `;
+                console.log('Loading notification');
+            } else if (step.showFlightForm) {
+                content.innerHTML = `
+                    <div style="padding: 10px; display: flex; flex-direction: column; height: 100%;">
+                        <div style="text-align: center; margin-bottom: 10px;">
+                            <h3 style="color: #1e293b; margin-bottom: 3px; font-size: 1.1rem; font-weight: 700;">Flight Details</h3>
+                            <p style="color: #64748b; font-size: 0.75rem; margin-bottom: 10px;">Enter your flight information to complete the booking</p>
+                        </div>
+                        
+                        <div style="background: white; border-radius: 10px; padding: 12px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); flex: 1;">
+                            <div style="margin-bottom: 8px;">
+                                <label style="display: block; font-size: 0.75rem; font-weight: 600; color: #374151; margin-bottom: 2px;">Flight Number</label>
+                                <input type="text" id="flightNumber" placeholder="e.g., BA123" style="width: 100%; padding: 8px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.8rem; box-sizing: border-box;">
+                            </div>
+                            
+                            <div style="margin-bottom: 8px;">
+                                <label style="display: block; font-size: 0.75rem; font-weight: 600; color: #374151; margin-bottom: 2px;">Airport</label>
+                                <select id="airport" style="width: 100%; padding: 8px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.8rem; box-sizing: border-box; background: white;">
+                                    <option value="LHR">London Heathrow (LHR)</option>
+                                    <option value="LGW">London Gatwick (LGW)</option>
+                                    <option value="STN">London Stansted (STN)</option>
+                                    <option value="LCY">London City (LCY)</option>
+                                </select>
+                            </div>
+                            
+                            <div style="margin-bottom: 8px;">
+                                <label style="display: block; font-size: 0.75rem; font-weight: 600; color: #374151; margin-bottom: 2px;">Terminal</label>
+                                <select id="terminal" style="width: 100%; padding: 8px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.8rem; box-sizing: border-box; background: white;">
+                                    <option value="T5" selected>Terminal 5</option>
+                                    <option value="T2">Terminal 2</option>
+                                    <option value="T3">Terminal 3</option>
+                                    <option value="T4">Terminal 4</option>
+                                </select>
+                            </div>
+                            
+                            <div style="margin-bottom: 8px;">
+                                <label style="display: block; font-size: 0.75rem; font-weight: 600; color: #374151; margin-bottom: 2px;">Departure Date</label>
+                                <input type="date" id="departureDate" style="width: 100%; padding: 8px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.8rem; box-sizing: border-box;">
+                            </div>
+                            
+                            <div style="margin-bottom: 12px;">
+                                <label style="display: block; font-size: 0.75rem; font-weight: 600; color: #374151; margin-bottom: 2px;">Departure Time</label>
+                                <input type="time" id="departureTime" style="width: 100%; padding: 8px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.8rem; box-sizing: border-box;" value="14:30">
+                            </div>
+                            
+                            <button class="priority-pass-book-button" onclick="confirmFlightDetails(event)" style="width: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; padding: 10px; font-size: 0.85rem;">Confirm Flight Details</button>
+                        </div>
+                        
+                        <p style="font-size: 0.65rem; color: #64748b; text-align: center; margin: 0;">This information helps us coordinate your lounge access timing</p>
+                    </div>
+                `;
+                // Set default date to today
+                setTimeout(() => {
+                    const dateInput = document.getElementById('departureDate');
+                    if (dateInput) {
+                        const today = new Date();
+                        const tomorrow = new Date(today);
+                        tomorrow.setDate(today.getDate() + 1); // Set to tomorrow as default
+                        dateInput.value = tomorrow.toISOString().split('T')[0];
+                    }
+                }, 100);
+                console.log('Loading flight form');
+            } else if (step.showLoungeSelection) {
+                content.innerHTML = `
+                    <div style="padding: 10px; display: flex; flex-direction: column; height: 100%;">
+                        <div style="text-align: center; margin-bottom: 10px;">
+                            <h3 style="color: #1e293b; margin-bottom: 3px; font-size: 1.1rem; font-weight: 700;">Available Lounges</h3>
+                            <p style="color: #64748b; font-size: 0.75rem; margin-bottom: 10px;">Select from available lounges at Terminal 5</p>
+                        </div>
+                        
+                        <div style="flex: 1; display: flex; flex-direction: column; gap: 12px;">
+                            <div style="background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); cursor: pointer; border: 2px solid #e2e8f0;" onclick="selectLounge('plaza-premium')" id="lounge-plaza">
+                                <div style="position: relative;">
+                                    <img src="plaza-premium-t5.webp" alt="Plaza Premium Lounge" style="width: 100%; height: 80px; object-fit: cover;">
+                                    <div style="position: absolute; top: 8px; right: 8px; width: 20px; height: 20px; border: 2px solid white; border-radius: 50%; background: rgba(255, 255, 255, 0.9);" id="radio-plaza"></div>
+                                </div>
+                                <div style="padding: 12px;">
+                                    <div style="margin-bottom: 8px;">
+                                        <h4 style="font-size: 0.9rem; font-weight: 600; color: #1e293b; margin: 0 0 4px 0;">Plaza Premium Lounge</h4>
+                                        <p style="font-size: 0.7rem; color: #64748b; margin: 0;">Terminal 5, Level 2</p>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 4px;">
+                                        <span style="color: #059669; font-weight: 600;">Available Today</span>
+                                        <span style="color: #64748b;">06:00 - 22:00</span>
+                                    </div>
+                                    <div style="font-size: 0.7rem; color: #64748b;">
+                                        Priority Pass members: Free entry
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div style="background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); cursor: pointer; border: 2px solid #e2e8f0;" onclick="selectLounge('club-aspire')" id="lounge-club">
+                                <div style="position: relative;">
+                                    <img src="club-aspire-t5.webp" alt="Club Aspire Lounge" style="width: 100%; height: 80px; object-fit: cover;">
+                                    <div style="position: absolute; top: 8px; right: 8px; width: 20px; height: 20px; border: 2px solid white; border-radius: 50%; background: rgba(255, 255, 255, 0.9);" id="radio-club"></div>
+                                </div>
+                                <div style="padding: 12px;">
+                                    <div style="margin-bottom: 8px;">
+                                        <h4 style="font-size: 0.9rem; font-weight: 600; color: #1e293b; margin: 0 0 4px 0;">Club Aspire Lounge</h4>
+                                        <p style="font-size: 0.7rem; color: #64748b; margin: 0;">Terminal 5, Level 3</p>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 4px;">
+                                        <span style="color: #059669; font-weight: 600;">Available Today</span>
+                                        <span style="color: #64748b;">05:30 - 23:00</span>
+                                    </div>
+                                    <div style="font-size: 0.7rem; color: #64748b;">
+                                        Priority Pass members: Free entry
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button class="priority-pass-book-button" onclick="proceedToReservation()" style="width: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; padding: 10px; font-size: 0.85rem; margin-top: 10px;" disabled id="proceed-btn">Select a lounge to continue</button>
+                    </div>
+                `;
+                console.log('Loading lounge selection');
+            } else if (step.showLoungeReservation) {
+                content.innerHTML = `
+                    <div style="padding: 10px; display: flex; flex-direction: column; height: 100%;">
+                        <div style="text-align: center; margin-bottom: 10px;">
+                            <h3 style="color: #1e293b; margin-bottom: 3px; font-size: 1.1rem; font-weight: 700;">Lounge Reservation</h3>
+                            <p style="color: #64748b; font-size: 0.75rem; margin-bottom: 10px;">Enter your entry and exit times</p>
+                        </div>
+                        
+                        <div style="background: white; border-radius: 10px; padding: 12px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); flex: 1;">
+                            <div style="margin-bottom: 12px;">
+                                <label style="display: block; font-size: 0.75rem; font-weight: 600; color: #374151; margin-bottom: 2px;">Selected Lounge</label>
+                                <div style="background: #f8fafc; border-radius: 6px; overflow: hidden;">
+                                    <img src="plaza-premium-t5.webp" alt="Plaza Premium Lounge" style="width: 100%; height: 80px; object-fit: cover;" id="selected-lounge-image">
+                                    <div style="padding: 10px; text-align: center;">
+                                        <div style="font-size: 0.9rem; color: #1e293b; font-weight: 600;" id="selected-lounge-display">Plaza Premium Lounge</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div style="margin-bottom: 12px;">
+                                <label style="display: block; font-size: 0.75rem; font-weight: 600; color: #374151; margin-bottom: 2px;">Entry Time</label>
+                                <input type="time" id="entryTime" style="width: 100%; padding: 8px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.8rem; box-sizing: border-box;" value="14:00">
+                            </div>
+                            
+                            <div style="margin-bottom: 15px;">
+                                <label style="display: block; font-size: 0.75rem; font-weight: 600; color: #374151; margin-bottom: 2px;">Exit Time</label>
+                                <input type="time" id="exitTime" style="width: 100%; padding: 8px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.8rem; box-sizing: border-box;" value="16:00">
+                            </div>
+                            
+                            <button class="priority-pass-book-button" onclick="confirmLoungeReservation(event)" style="width: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; padding: 10px; font-size: 0.85rem;">Confirm Reservation</button>
+                        </div>
+                        
+                        <p style="font-size: 0.65rem; color: #64748b; text-align: center; margin: 0;">Your reservation will be confirmed immediately</p>
+                    </div>
+                `;
+                console.log('Loading lounge reservation');
+            } else if (step.showTaxiUpdate) {
+                content.innerHTML = `
+                    <div style="padding: 10px; display: flex; flex-direction: column; height: 100%;">
+                        <div style="text-align: center; margin-bottom: 10px;">
+                            <h3 style="color: #1e293b; margin-bottom: 3px; font-size: 1.1rem; font-weight: 700;">Update Taxi Booking</h3>
+                            <p style="color: #64748b; font-size: 0.75rem; margin-bottom: 10px;">Based on your lounge time, we recommend adjusting your taxi</p>
+                        </div>
+                        
+                        <div style="background: white; border-radius: 10px; padding: 10px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); flex: 1;">
+                            <div style="background: #f0f9ff; border: 1px solid #0ea5e9; border-radius: 8px; padding: 8px; margin-bottom: 10px;">
+                                <div style="display: flex; align-items: center; margin-bottom: 4px;">
+                                    <span style="font-size: 1rem; margin-right: 6px;">🚗</span>
+                                    <span style="font-size: 0.75rem; font-weight: 600; color: #0c4a6e;">Recommended Taxi Time</span>
+                                </div>
+                                <div style="font-size: 0.7rem; color: #0369a1; line-height: 1.3;">
+                                    Arrive at airport 30 minutes before lounge entry time
+                                </div>
+                            </div>
+                            
+                            <div style="margin-bottom: 8px;">
+                                <label style="display: block; font-size: 0.7rem; font-weight: 600; color: #374151; margin-bottom: 2px;">Pickup Date</label>
+                                <input type="date" id="taxiDate" style="width: 100%; padding: 6px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.75rem; box-sizing: border-box;">
+                            </div>
+                            
+                            <div style="margin-bottom: 10px;">
+                                <label style="display: block; font-size: 0.7rem; font-weight: 600; color: #374151; margin-bottom: 2px;">Pickup Time</label>
+                                <input type="time" id="taxiTime" style="width: 100%; padding: 6px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.75rem; box-sizing: border-box;" value="13:30">
+                            </div>
+                            
+                            <div style="background: #f8fafc; border-radius: 6px; padding: 8px; margin-bottom: 10px;">
+                                <div style="font-size: 0.7rem; color: #64748b; margin-bottom: 6px; font-weight: 600;">Your Schedule:</div>
+                                <div style="font-size: 0.75rem; color: #1e293b; font-weight: 500;">
+                                    <div style="margin-bottom: 6px;">
+                                        <div style="display: flex; align-items: center; margin-bottom: 2px;">
+                                            <span style="font-size: 0.9rem; margin-right: 6px;">🚗</span>
+                                            <span>Taxi Pickup:</span>
+                                        </div>
+                                        <div id="taxi-schedule-display" style="margin-left: 20px; color: #64748b; font-size: 0.7rem;">Today, 13:30</div>
+                                    </div>
+                                    <div style="margin-bottom: 6px;">
+                                        <div style="display: flex; align-items: center; margin-bottom: 2px;">
+                                            <span style="font-size: 0.9rem; margin-right: 6px;">✈️</span>
+                                            <span>Airport Arrival:</span>
+                                        </div>
+                                        <div style="margin-left: 20px; color: #64748b; font-size: 0.7rem;">Today, 14:00</div>
+                                    </div>
+                                    <div style="margin-bottom: 0;">
+                                        <div style="display: flex; align-items: center; margin-bottom: 2px;">
+                                            <span style="font-size: 0.9rem; margin-right: 6px;">🛋️</span>
+                                            <span>Lounge Entry:</span>
+                                        </div>
+                                        <div id="lounge-schedule-display" style="margin-left: 20px; color: #64748b; font-size: 0.7rem;">Today, 14:00</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <button class="priority-pass-book-button" onclick="confirmTaxiUpdate(event)" style="width: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; padding: 8px; font-size: 0.8rem;">Confirm Taxi Booking</button>
+                        </div>
+                        
+                        <p style="font-size: 0.65rem; color: #64748b; text-align: center; margin: 0;">Your taxi will be updated to match your lounge schedule</p>
+                    </div>
+                `;
+                
+                // Set default date and update schedule display
+                setTimeout(() => {
+                    const dateInput = document.getElementById('taxiDate');
+                    const timeInput = document.getElementById('taxiTime');
+                    if (dateInput) {
+                        const today = new Date();
+                        dateInput.value = today.toISOString().split('T')[0];
+                    }
+                    updateScheduleDisplay();
+                    
+                    // Add event listeners for real-time updates
+                    if (dateInput) {
+                        dateInput.addEventListener('change', updateScheduleDisplay);
+                    }
+                    if (timeInput) {
+                        timeInput.addEventListener('change', updateScheduleDisplay);
+                    }
+                }, 100);
+                
+                console.log('Loading taxi update');
+            } else if (step.showQRCode) {
+                content.innerHTML = `
+                    <div style="padding: 10px; display: flex; flex-direction: column; height: 100%;">
+                        <div style="text-align: center; margin-bottom: 15px;">
+                            <h3 style="color: #1e293b; margin-bottom: 5px; font-size: 1.1rem; font-weight: 700;">Reservation Confirmed!</h3>
+                            <p style="color: #64748b; font-size: 0.75rem; margin-bottom: 15px;">Your lounge access is ready</p>
+                        </div>
+                        
+                        <div style="background: white; border-radius: 10px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                            <div style="text-align: center; margin-bottom: 20px;">
+                                <div style="width: 120px; height: 120px; background: white; border: 2px solid #e2e8f0; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; padding: 8px;">
+                                    <img src="qr.png" alt="Priority Pass QR Code" style="width: 104px; height: 104px; object-fit: contain;">
+                                </div>
+                                <h4 style="font-size: 0.9rem; font-weight: 600; color: #1e293b; margin: 0 0 5px 0;">QR Code Generated</h4>
+                                <p style="font-size: 0.75rem; color: #64748b; margin: 0;">Show this at the lounge counter</p>
+                            </div>
+                            
+                            <div style="background: #f8fafc; border-radius: 8px; padding: 12px; width: 100%; margin-bottom: 15px;">
+                                <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 5px;">
+                                    <span style="color: #64748b;">Lounge:</span>
+                                    <span style="color: #1e293b; font-weight: 600;">Plaza Premium</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 5px;">
+                                    <span style="color: #64748b;">Date:</span>
+                                    <span style="color: #1e293b; font-weight: 600;">Today</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; font-size: 0.75rem;">
+                                    <span style="color: #64748b;">Time:</span>
+                                    <span style="color: #1e293b; font-weight: 600;">14:00 - 16:00</span>
+                                </div>
+                            </div>
+                            
+                            <button class="priority-pass-book-button" onclick="showQRCode()" style="width: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; padding: 10px; font-size: 0.85rem;">Show QR Code</button>
+                        </div>
+                        
+                        <p style="font-size: 0.65rem; color: #64748b; text-align: center; margin: 0;">Your reservation is valid for the selected time slot</p>
+                    </div>
+                `;
+                console.log('Loading QR code');
+            } else {
+                content.innerHTML = `
+                    <img src="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='50' font-size='50'>${step.icon}</text></svg>" alt="${step.title}">
+                    <h3>${step.title}</h3>
+                    <p>${step.desc}</p>
+                `;
+                console.log('Loading icon:', step.icon);
+            }
+        }
+
+        function goBack() {
+            // Hide all demo sections
+            document.getElementById('taxi-demo').classList.remove('show');
+            document.getElementById('priority-demo').classList.remove('show');
+            
+            // Remove selection from cards
+            document.querySelectorAll('.integration-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+        }
+
+
+
+        
+        function handleNotificationClick(notification) {
+            // Add clicked class for animation
+            notification.classList.add('clicked');
+            
+            // Remove clicked class after animation completes
+            setTimeout(() => {
+                notification.classList.remove('clicked');
+            }, 600);
+            
+            // Simulate notification action (could navigate to next step)
+            console.log('Notification clicked! Navigating to lounges...');
+            
+            // Optional: Auto-advance to next step after a short delay
+            setTimeout(() => {
+                showStep(3, 'taxi');
+                // Find and click step 3
+                const step3 = document.querySelector('#taxi-demo .step-box:nth-child(3)');
+                if (step3) {
+                    step3.click();
+                    // Scroll to the step
+                    setTimeout(() => {
+                        step3.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'center',
+                            inline: 'nearest'
+                        });
+                    }, 100);
+                }
+            }, 800);
+        }
+        
+        function simulateBooking(event) {
+            // Add loading state to button
+            const button = event.target;
+            const originalText = button.textContent;
+            button.textContent = 'Booking...';
+            button.disabled = true;
+            button.style.opacity = '0.7';
+            
+            // Simulate booking process
+            setTimeout(() => {
+                button.textContent = 'Booked! ✓';
+                button.style.background = 'linear-gradient(135deg, #059669 0%, #047857 100%)';
+                button.style.boxShadow = '0 4px 15px rgba(5, 150, 105, 0.3)';
+                
+                // Auto-advance to next step after showing success
+                setTimeout(() => {
+                    showStep(2, 'taxi');
+                    // Find and click step 2
+                    const step2 = document.querySelector('#taxi-demo .step-box:nth-child(2)');
+                    if (step2) {
+                        step2.click();
+                        // Scroll to the step
+                        setTimeout(() => {
+                            step2.scrollIntoView({
+                                behavior: 'smooth',
+                                block: 'center',
+                                inline: 'nearest'
+                            });
+                        }, 100);
+                    }
+                }, 1500);
+            }, 2000);
+        }
+        
+        function simulateUberSelection(event) {
+            // Add click effect to the pulsating circle
+            const circle = event.target;
+            circle.style.transform = 'translate(-50%, -50%) scale(0.8)';
+            circle.style.opacity = '0.7';
+            
+            // Reset after animation
+            setTimeout(() => {
+                circle.style.transform = 'translate(-50%, -50%) scale(1)';
+                circle.style.opacity = '1';
+            }, 200);
+            
+            // Simulate Uber selection and auto-advance to next step
+            setTimeout(() => {
+                showStep(2, 'taxi');
+                // Find and click step 2
+                const step2 = document.querySelector('#taxi-demo .step-box:nth-child(2)');
+                if (step2) {
+                    step2.click();
+                    // Scroll to the step
+                    setTimeout(() => {
+                        step2.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'center',
+                            inline: 'nearest'
+                        });
+                    }, 100);
+                }
+            }, 1000);
+        }
+        
+        function bookWithPriorityPass(event) {
+            // Add loading state to button
+            const button = event.target;
+            const originalText = button.textContent;
+            button.textContent = 'Booking...';
+            button.disabled = true;
+            button.style.opacity = '0.7';
+            
+            // Simulate booking process
+            setTimeout(() => {
+                button.textContent = 'Booked! ✓';
+                button.style.background = 'linear-gradient(135deg, #059669 0%, #047857 100%)';
+                button.style.boxShadow = '0 4px 15px rgba(5, 150, 105, 0.3)';
+                
+                // Auto-advance to next step after showing success
+                setTimeout(() => {
+                    showStep(5, 'taxi');
+                    // Find and click step 5
+                    const step5 = document.querySelector('#taxi-demo .step-box:nth-child(5)');
+                    if (step5) {
+                        step5.click();
+                        // Scroll to the step
+                        setTimeout(() => {
+                            step5.scrollIntoView({
+                                behavior: 'smooth',
+                                block: 'center',
+                                inline: 'nearest'
+                            });
+                        }, 100);
+                    }
+                }, 1500);
+            }, 2000);
+        }
+        
+        function handlePriorityPassLogin(event) {
+            // Get form inputs
+            const email = document.querySelector('input[type="email"]').value;
+            const password = document.querySelector('input[type="password"]').value;
+            
+            // Check if email and password are filled
+            if (!email || !password) {
+                alert('Please enter both email and password');
+                return;
+            }
+            
+            // Add loading state to button
+            const button = event.target;
+            const originalText = button.textContent;
+            button.textContent = 'Signing In...';
+            button.disabled = true;
+            button.style.opacity = '0.7';
+            
+            // Simulate authentication process
+            setTimeout(() => {
+                button.textContent = 'Success! ✓';
+                button.style.background = 'linear-gradient(135deg, #059669 0%, #047857 100%)';
+                button.style.boxShadow = '0 4px 15px rgba(5, 150, 105, 0.3)';
+                
+                // Show consent section after successful login
+                setTimeout(() => {
+                    const consentSection = document.getElementById('consentSection');
+                    consentSection.style.display = 'block';
+                    consentSection.style.visibility = 'visible';
+                    consentSection.style.opacity = '1';
+                    consentSection.style.height = 'auto';
+                    consentSection.style.overflow = 'visible';
+
+                    // Hide login section so only permissions are visible
+                    const loginSection = document.getElementById('loginSection');
+                    if (loginSection) {
+                        loginSection.style.display = 'none';
+                    }
+
+                    // Update heading and subtitle to reflect permissions screen
+                    const authTitle = document.getElementById('authTitle');
+                    if (authTitle) {
+                        authTitle.textContent = 'Permission Request';
+                    }
+                    const authSubtitle = document.getElementById('authSubtitle');
+                    if (authSubtitle) {
+                        authSubtitle.textContent = 'Uber requires access to your Priority Pass details';
+                    }
+                    // Reset button to original state
+                    button.textContent = originalText;
+                    button.disabled = false;
+                    button.style.opacity = '1';
+                    button.style.background = 'linear-gradient(135deg, #475569 0%, #334155 100%)';
+                    button.style.boxShadow = 'none';
+                }, 1500);
+            }, 2000);
+        }
+        
+        function handleConsentAllow(event) {
+            // Add loading state to button
+            const button = event.target;
+            const originalText = button.textContent;
+            button.textContent = 'Processing...';
+            button.disabled = true;
+            button.style.opacity = '0.7';
+            
+            // Simulate consent processing
+            setTimeout(() => {
+                button.textContent = 'Allowed! ✓';
+                button.style.background = 'linear-gradient(135deg, #059669 0%, #047857 100%)';
+                button.style.boxShadow = '0 4px 15px rgba(5, 150, 105, 0.3)';
+                
+                // Auto-advance to next step after showing success
+                setTimeout(() => {
+                    showStep(6, 'taxi');
+                    // Find and click step 6
+                    const step6 = document.querySelector('#taxi-demo .step-box:nth-child(6)');
+                    if (step6) {
+                        step6.click();
+                        // Scroll to the step
+                        setTimeout(() => {
+                            step6.scrollIntoView({
+                                behavior: 'smooth',
+                                block: 'center',
+                                inline: 'nearest'
+                            });
+                        }, 100);
+                    }
+                }, 1500);
+            }, 2000);
+        }
+        
+        function handleConsentDeny(event) {
+            // Add loading state to button
+            const button = event.target;
+            const originalText = button.textContent;
+            button.textContent = 'Denying...';
+            button.disabled = true;
+            button.style.opacity = '0.7';
+            
+            // Simulate denial process
+            setTimeout(() => {
+                button.textContent = 'Denied';
+                button.style.background = 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)';
+                button.style.boxShadow = '0 4px 15px rgba(220, 38, 38, 0.3)';
+                
+                // Show message and stay on current step
+                setTimeout(() => {
+                    button.textContent = 'Access Denied';
+                    button.disabled = false;
+                    button.style.opacity = '1';
+                }, 1500);
+            }, 2000);
+        }
+        
+        function confirmFlightDetails(event) {
+            // Get form values
+            const flightNumber = document.getElementById('flightNumber').value;
+            const airport = document.getElementById('airport').value;
+            const terminal = document.getElementById('terminal').value;
+            const departureDate = document.getElementById('departureDate').value;
+            const departureTime = document.getElementById('departureTime').value;
+            
+            // Validate required fields
+            if (!flightNumber || !departureDate || !departureTime) {
+                alert('Please fill in all required fields: Flight Number, Departure Date, and Departure Time');
+                return;
+            }
+            
+            // Add loading state to button
+            const button = event.target;
+            const originalText = button.textContent;
+            button.textContent = 'Processing...';
+            button.disabled = true;
+            button.style.opacity = '0.7';
+            
+            // Simulate flight details processing
+            setTimeout(() => {
+                button.textContent = 'Confirmed! ✓';
+                button.style.background = 'linear-gradient(135deg, #059669 0%, #047857 100%)';
+                button.style.boxShadow = '0 4px 15px rgba(5, 150, 105, 0.3)';
+                
+                // Auto-advance to next step after showing success
+                setTimeout(() => {
+                    showStep(7, 'taxi');
+                    // Find and click step 7
+                    const step7 = document.querySelector('#taxi-demo .step-box:nth-child(7)');
+                    if (step7) {
+                        step7.click();
+                        // Scroll to the step
+                        setTimeout(() => {
+                            step7.scrollIntoView({
+                                behavior: 'smooth',
+                                block: 'center',
+                                inline: 'nearest'
+                            });
+                        }, 100);
+                    }
+                }, 1500);
+            }, 2000);
+        }
+        
+        let selectedLounge = null;
+        
+        function selectLounge(loungeType) {
+            // Reset all lounge selections
+            document.querySelectorAll('[id^="lounge-"]').forEach(lounge => {
+                lounge.style.border = '2px solid #e2e8f0';
+            });
+            document.querySelectorAll('[id^="radio-"]').forEach(radio => {
+                radio.style.background = 'rgba(255, 255, 255, 0.9)';
+                radio.style.border = '2px solid white';
+            });
+            
+            // Select the clicked lounge
+            const loungeElement = document.getElementById(`lounge-${loungeType}`);
+            const radioElement = document.getElementById(`radio-${loungeType}`);
+            
+            if (loungeElement && radioElement) {
+                loungeElement.style.border = '2px solid #667eea';
+                radioElement.style.background = '#667eea';
+                radioElement.style.border = '2px solid #667eea';
+                
+                selectedLounge = loungeType;
+                
+                // Enable the proceed button
+                const proceedBtn = document.getElementById('proceed-btn');
+                if (proceedBtn) {
+                    proceedBtn.disabled = false;
+                    proceedBtn.textContent = 'Continue to Reservation';
+                    proceedBtn.style.opacity = '1';
+                }
+            }
+        }
+        
+        function proceedToReservation() {
+            if (!selectedLounge) {
+                alert('Please select a lounge first');
+                return;
+            }
+            
+            // Update the reservation screen with selected lounge details
+            setTimeout(() => {
+                const loungeImage = document.getElementById('selected-lounge-image');
+                const loungeDisplay = document.getElementById('selected-lounge-display');
+                
+                if (selectedLounge === 'plaza-premium') {
+                    if (loungeImage) loungeImage.src = 'plaza-premium-t5.webp';
+                    if (loungeDisplay) loungeDisplay.textContent = 'Plaza Premium Lounge';
+                } else if (selectedLounge === 'club-aspire') {
+                    if (loungeImage) loungeImage.src = 'club-aspire-t5.webp';
+                    if (loungeDisplay) loungeDisplay.textContent = 'Club Aspire Lounge';
+                }
+            }, 100);
+            
+            // Auto-advance to next step
+            showStep(8, 'taxi');
+            // Find and click step 8
+            const step8 = document.querySelector('#taxi-demo .step-box:nth-child(8)');
+            if (step8) {
+                step8.click();
+                // Scroll to the step
+                setTimeout(() => {
+                    step8.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'center',
+                        inline: 'nearest'
+                    });
+                }, 100);
+            }
+        }
+        
+        function confirmLoungeReservation(event) {
+            // Get form values
+            const entryTime = document.getElementById('entryTime').value;
+            const exitTime = document.getElementById('exitTime').value;
+            
+            // Validate required fields
+            if (!entryTime || !exitTime) {
+                alert('Please fill in both entry and exit times');
+                return;
+            }
+            
+            // Validate time logic
+            if (entryTime >= exitTime) {
+                alert('Exit time must be after entry time');
+                return;
+            }
+            
+            // Add loading state to button
+            const button = event.target;
+            const originalText = button.textContent;
+            button.textContent = 'Processing...';
+            button.disabled = true;
+            button.style.opacity = '0.7';
+            
+            // Simulate reservation processing
+            setTimeout(() => {
+                button.textContent = 'Reserved! ✓';
+                button.style.background = 'linear-gradient(135deg, #059669 0%, #047857 100%)';
+                button.style.boxShadow = '0 4px 15px rgba(5, 150, 105, 0.3)';
+                
+                                // Auto-advance to next step after showing success
+                setTimeout(() => {
+                    showStep(9, 'taxi');
+                    // Find and click step 9
+                    const step9 = document.querySelector('#taxi-demo .step-box:nth-child(9)');
+                    if (step9) {
+                        step9.click();
+                        // Scroll to the step
+                        setTimeout(() => {
+                            step9.scrollIntoView({
+                                behavior: 'smooth',
+                                block: 'center',
+                                inline: 'nearest'
+                            });
+                        }, 100);
+                    }
+                }, 1500);
+            }, 2000);
+        }
+        
+        function updateScheduleDisplay() {
+            const taxiDate = document.getElementById('taxiDate');
+            const taxiTime = document.getElementById('taxiTime');
+            const taxiDisplay = document.getElementById('taxi-schedule-display');
+            const loungeDisplay = document.getElementById('lounge-schedule-display');
+            
+            if (taxiDate && taxiTime && taxiDisplay && loungeDisplay) {
+                const date = taxiDate.value || 'Today';
+                const time = taxiTime.value || '13:30';
+                taxiDisplay.textContent = `${date}, ${time}`;
+                loungeDisplay.textContent = `${date}, 14:00`;
+            }
+        }
+        
+        function confirmTaxiUpdate(event) {
+            // Get form values
+            const taxiDate = document.getElementById('taxiDate').value;
+            const taxiTime = document.getElementById('taxiTime').value;
+            
+            // Validate required fields
+            if (!taxiDate || !taxiTime) {
+                alert('Please fill in both pickup date and time');
+                return;
+            }
+            
+            // Add loading state to button
+            const button = event.target;
+            const originalText = button.textContent;
+            button.textContent = 'Updating...';
+            button.disabled = true;
+            button.style.opacity = '0.7';
+            
+            // Simulate taxi booking update
+            setTimeout(() => {
+                button.textContent = 'Updated! ✓';
+                button.style.background = 'linear-gradient(135deg, #059669 0%, #047857 100%)';
+                button.style.boxShadow = '0 4px 15px rgba(5, 150, 105, 0.3)';
+                
+                // Auto-advance to next step after showing success
+                setTimeout(() => {
+                    showStep(10, 'taxi');
+                    // Find and click step 10
+                    const step10 = document.querySelector('#taxi-demo .step-box:nth-child(10)');
+                    if (step10) {
+                        step10.click();
+                        // Scroll to the step
+                        setTimeout(() => {
+                            step10.scrollIntoView({
+                                behavior: 'smooth',
+                                block: 'center',
+                                inline: 'nearest'
+                            });
+                        }, 100);
+                    }
+                }, 1500);
+            }, 2000);
+        }
+        
+        function showQRCode() {
+            // Add loading state to button
+            const button = event.target;
+            const originalText = button.textContent;
+            button.textContent = 'Loading...';
+            button.disabled = true;
+            button.style.opacity = '0.7';
+            
+            // Simulate QR code generation
+            setTimeout(() => {
+                button.textContent = 'QR Code Displayed ✓';
+                button.style.background = 'linear-gradient(135deg, #059669 0%, #047857 100%)';
+                button.style.boxShadow = '0 4px 15px rgba(5, 150, 105, 0.3)';
+                
+                // Show success message
+                setTimeout(() => {
+                    alert('QR Code displayed successfully! Your lounge access is ready.');
+                    button.textContent = originalText;
+                    button.disabled = false;
+                    button.style.opacity = '1';
+                    button.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+                    button.style.boxShadow = 'none';
+                }, 1000);
+            }, 1500);
+        }
+        
+        // Initialize with first integration selected
+        window.onload = function() {
+            selectIntegration('taxi');
+            // Also show the first step by default
+            setTimeout(() => {
+                updateMobileContent(1, 'taxi');
+            }, 100);
+        };
+    </script>
+</body>
+</html>
