@@ -5,7 +5,6 @@ A demonstration of seamless integration between taxi booking apps and Priority P
 ## Demo Files
 
 - **`integration-demo.html`** - Main integration demo showing the complete user flow
-- **`index.html`** - Taxi app interface demo
 
 ## How to Use
 
